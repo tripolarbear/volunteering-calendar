@@ -1,0 +1,42 @@
+/* Hallmark - tokens: internal-tool - tone: calm operational - anchor hue: teal */
+:root {
+  --color-paper: oklch(98% 0.012 91);
+  --color-surface: oklch(100% 0 0);
+  --color-surface-muted: oklch(95% 0.014 91);
+  --color-ink: oklch(22% 0.035 245);
+  --color-muted: oklch(48% 0.028 245);
+  --color-rule: oklch(86% 0.02 91);
+  --color-accent: oklch(54% 0.118 184);
+  --color-accent-strong: oklch(42% 0.11 184);
+  --color-accent-soft: oklch(91% 0.052 184);
+  --color-danger: oklch(57% 0.17 29);
+  --color-warning: oklch(70% 0.13 78);
+  --color-success: oklch(58% 0.13 151);
+  --color-focus: oklch(54% 0.118 184);
+  --font-display: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, monospace;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --text-xs: 0.78rem;
+  --text-sm: 0.9rem;
+  --text-base: 1rem;
+  --text-lg: 1.16rem;
+  --text-xl: 1.45rem;
+  --text-2xl: 2rem;
+  --radius-sm: 0.35rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --rule-thin: 1px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-med: 180ms;
+}
+
