@@ -60,3 +60,5 @@ export interface ActivityLog extends CreateActivityLogInput {
   createdAt: TimestampValue;
   updatedAt: TimestampValue;
 }
+
+export type WithId<T> = T & { id: string };

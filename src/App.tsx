@@ -2,16 +2,11 @@ import { useState, type ReactNode } from "react";
 import { useAuth } from "./auth/AuthProvider";
 import { AppShell, type ScreenKey } from "./components/AppShell";
 import { AuthScreen } from "./screens/AuthScreen";
+import { ActivityLogsScreen } from "./screens/ActivityLogsScreen";
+import { BoardScreen } from "./screens/BoardScreen";
+import { CalendarScreen } from "./screens/CalendarScreen";
+import { DashboardScreen } from "./screens/DashboardScreen";
 import { ProfileScreen } from "./screens/ProfileScreen";
-
-function PlaceholderScreen({ title }: { title: string }) {
-  return (
-    <section className="panel">
-      <h2>{title}</h2>
-      <p className="muted">This workspace is ready for volunteer coordination.</p>
-    </section>
-  );
-}
 
 export default function App() {
   const auth = useAuth();
@@ -31,10 +26,10 @@ export default function App() {
   }
 
   const screens: Record<ScreenKey, ReactNode> = {
-    dashboard: <PlaceholderScreen title="Dashboard" />,
-    calendar: <PlaceholderScreen title="Calendar" />,
-    board: <PlaceholderScreen title="Board" />,
-    logs: <PlaceholderScreen title="Activity Logs" />,
+    dashboard: <DashboardScreen logs={[]} posts={[]} requests={[]} tier={auth.profile.tier} />,
+    calendar: <CalendarScreen tier={auth.profile.tier} userId={auth.profile.uid} />,
+    board: <BoardScreen tier={auth.profile.tier} userId={auth.profile.uid} />,
+    logs: <ActivityLogsScreen tier={auth.profile.tier} userId={auth.profile.uid} />,
     profile: <ProfileScreen />,
   };
 
