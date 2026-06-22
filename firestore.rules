@@ -1,0 +1,94 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isTeacher() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc(request.auth.uid).data.tier == "teacher";
+    }
+
+    function onlyChanged(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    match /appConfig/{configId} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isTeacher();
+      allow create: if isSelf(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.tier == "student";
+      allow update: if isSelf(uid)
+        && request.resource.data.uid == uid
+        && (
+          request.resource.data.tier == resource.data.tier
+          || (resource.data.tier == "student" && request.resource.data.tier == "teacher")
+        );
+    }
+
+    match /scheduleRequests/{requestId} {
+      allow read: if isTeacher() || (signedIn() && resource.data.createdBy == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "pending"
+        && request.resource.data.reviewedBy == null
+        && request.resource.data.reviewedAt == null;
+      allow update: if isTeacher()
+        || (
+          signedIn()
+          && resource.data.createdBy == request.auth.uid
+          && resource.data.status == "pending"
+          && request.resource.data.status == "pending"
+          && onlyChanged(["date", "startTime", "endTime", "note", "updatedAt"])
+        );
+      allow delete: if isTeacher();
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && (
+          isTeacher()
+          || request.resource.data.type in ["volunteerIntro", "lessonPlan"]
+        );
+      allow update, delete: if isTeacher()
+        || (signedIn() && resource.data.createdBy == request.auth.uid && resource.data.type in ["volunteerIntro", "lessonPlan"]);
+    }
+
+    match /activityLogs/{logId} {
+      allow read: if isTeacher() || (signedIn() && resource.data.createdBy == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "submitted"
+        && request.resource.data.recognizedBy == null
+        && request.resource.data.recognizedAt == null;
+      allow update: if isTeacher()
+        || (
+          signedIn()
+          && resource.data.createdBy == request.auth.uid
+          && resource.data.status == "submitted"
+          && request.resource.data.status == "submitted"
+          && onlyChanged(["scheduleRequestId", "date", "startTime", "endTime", "note", "updatedAt"])
+        );
+      allow delete: if isTeacher();
+    }
+  }
+}
+
