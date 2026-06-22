@@ -1,12 +1,12 @@
 import { FormEvent, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
-import { createPost } from "../services/postService";
-import { useFirestoreRecords } from "../services/useFirestoreRecords";
+import { createPost, MAX_POST_BODY_LENGTH } from "../services/postService";
+import { usePostBundle } from "../services/usePostBundle";
 import type { BoardPost, BoardPostType, Tier, WithId } from "../types";
 
 const teacherPostTypes: Array<{ label: string; value: BoardPostType }> = [
   { label: "Notice", value: "notice" },
-  { label: "Activity Report", value: "activityReport" },
+  { label: "Schedule request", value: "activityReport" },
 ];
 
 export function BoardScreen({
@@ -22,10 +22,11 @@ export function BoardScreen({
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [writerOpen, setWriterOpen] = useState(false);
-  const liveRecords = useFirestoreRecords<BoardPost>({ collectionName: "posts", enabled: !posts });
+  const [selectedPost, setSelectedPost] = useState<WithId<BoardPost> | null>(null);
+  const liveRecords = usePostBundle({ enabled: !posts });
   const allPosts = posts ?? liveRecords.records;
   const visiblePosts = allPosts
-    .filter((post) => post.type === "notice" || (post.type === "activityReport" && (tier === "teacher" || post.createdBy === userId)))
+    .filter((post) => post.type === "notice" || post.type === "activityReport")
     .sort((a, b) => {
       if (a.type === b.type) {
         return 0;
@@ -33,7 +34,9 @@ export function BoardScreen({
       return a.type === "notice" ? -1 : 1;
     });
   const postTypes =
-    tier === "teacher" ? teacherPostTypes : [{ label: "Activity Report", value: "activityReport" as const }];
+    tier === "teacher" ? teacherPostTypes : [{ label: "Schedule request", value: "activityReport" as const }];
+  const selectedPostIsSecret =
+    selectedPost?.type === "activityReport" && tier === "student" && selectedPost.createdBy !== userId;
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,12 +46,27 @@ export function BoardScreen({
     setWriterOpen(false);
   }
 
+  if (selectedPost) {
+    return (
+      <section className="panel screen-grid">
+        <button className="secondary-button board-back-button" onClick={() => setSelectedPost(null)} type="button">
+          Back to posts
+        </button>
+        <article aria-label="Board post detail" className="board-detail">
+          <span className="board-row-label">{selectedPost.type === "notice" ? "Notice" : "Schedule request"}</span>
+          <h2>{selectedPost.title}</h2>
+          <p>{selectedPostIsSecret ? "비밀글입니다." : selectedPost.body}</p>
+        </article>
+      </section>
+    );
+  }
+
   return (
     <section className="panel screen-grid">
       <div className="section-heading">
         <div>
           <p className="eyebrow">Board</p>
-          <h2>Notices and activity reports</h2>
+          <h2>Notices and schedule requests</h2>
         </div>
       </div>
       {writerOpen ? (
@@ -69,7 +87,7 @@ export function BoardScreen({
           </label>
           <label>
             Body
-            <textarea value={body} onChange={(event) => setBody(event.target.value)} />
+            <textarea maxLength={MAX_POST_BODY_LENGTH} value={body} onChange={(event) => setBody(event.target.value)} />
           </label>
           <button className="primary-button" type="submit">
             Create post
@@ -80,18 +98,24 @@ export function BoardScreen({
       <ul aria-label="Board posts" className="board-list">
         {visiblePosts.map((post) => (
           <li
-            aria-label={post.type === "notice" ? "Notice post" : "Activity report post"}
+            aria-label={post.type === "notice" ? "Notice post" : "Schedule request post"}
             className={post.type === "notice" ? "board-row board-row--notice" : "board-row"}
             key={post.id}
           >
-            <span className="board-row-type" aria-hidden="true">
-              {post.type === "notice" ? "!" : "Q"}
-            </span>
-            <div className="board-row-main">
-              <strong>{post.title}</strong>
-              <p>{post.body}</p>
-            </div>
-            <span className="board-row-label">{post.type === "notice" ? "Notice" : "Activity Report"}</span>
+            <button
+              aria-label={`Open ${post.title}`}
+              className="board-row-button"
+              onClick={() => setSelectedPost(post)}
+              type="button"
+            >
+              <span className="board-row-type" aria-hidden="true">
+                {post.type === "notice" ? "!" : "S"}
+              </span>
+              <span className="board-row-main">
+                <strong>{post.title}</strong>
+              </span>
+              <span className="board-row-label">{post.type === "notice" ? "Notice" : "Schedule request"}</span>
+            </button>
           </li>
         ))}
       </ul>

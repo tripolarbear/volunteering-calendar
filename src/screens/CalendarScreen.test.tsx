@@ -111,9 +111,20 @@ describe("CalendarScreen", () => {
     await user.click(screen.getByRole("button", { name: "Reading support 09:00-10:00" }));
 
     const dialog = screen.getByRole("dialog", { name: "Schedule details" });
-    expect(within(dialog).getByText("Reading support")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Selected schedule")).not.toBeInTheDocument();
+    expect(within(dialog).getByText("Title")).toBeInTheDocument();
+    expect(within(dialog).getAllByText("Reading support")).toHaveLength(2);
+    expect(within(dialog).getByText("Date")).toBeInTheDocument();
     expect(within(dialog).getByText("2026-06-23")).toBeInTheDocument();
-    expect(within(dialog).getByText("09:00-10:00")).toBeInTheDocument();
+    expect(within(dialog).getByText("Start time")).toBeInTheDocument();
+    expect(within(dialog).getByText("09:00")).toBeInTheDocument();
+    expect(within(dialog).getByText("End time")).toBeInTheDocument();
+    expect(within(dialog).getByText("10:00")).toBeInTheDocument();
+    expect(within(dialog).getByText("Duration")).toBeInTheDocument();
+    expect(within(dialog).getByText("60 min")).toBeInTheDocument();
+    expect(within(dialog).getByText("Status")).toBeInTheDocument();
+    expect(within(dialog).getByText("approved")).toBeInTheDocument();
+    expect(within(dialog).getByText("Note")).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Close details" }));
 
@@ -158,6 +169,7 @@ function scheduleRequest(
     date: "2026-06-23",
     startTime: "09:00",
     endTime: "10:00",
+    durationMinutes: 60,
     note: "Reading support",
     status: "approved",
     reviewedBy: "teacher-1",

@@ -1,29 +1,26 @@
 import { FormEvent, useState } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { StatusPill } from "../components/StatusPill";
-import { isValidTimeRange } from "../domain/dateTime";
+import { addMinutesToTime, isValidTimeRange, roundDownToTenMinutes } from "../domain/dateTime";
 import { createActivityLog, recognizeActivityLog } from "../services/activityLogService";
 import { createScheduleRequest } from "../services/scheduleService";
 import { useFirestoreRecords } from "../services/useFirestoreRecords";
 import type { ActivityLog, Tier, WithId } from "../types";
 
-const DURATION_OPTIONS = Array.from({ length: 12 }, (_, index) => (index + 1) * 15);
+const DURATION_OPTIONS = Array.from({ length: 18 }, (_, index) => (index + 1) * 10);
+const DEFAULT_DURATION_MINUTES = 60;
 
 function formatDateInput(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function formatTimeInput(date: Date) {
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
-
-function addMinutesToTime(time: string, minutes: number) {
-  const [hour, minute] = time.split(":").map(Number);
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
-    return "";
-  }
-  const date = new Date(2000, 0, 1, hour, minute + minutes);
-  return formatTimeInput(date);
+function getCurrentDefaults() {
+  const now = new Date();
+  return {
+    date: formatDateInput(now),
+    startTime: roundDownToTenMinutes(now),
+    durationMinutes: DEFAULT_DURATION_MINUTES,
+  };
 }
 
 export function ActivityLogsScreen({
@@ -35,13 +32,13 @@ export function ActivityLogsScreen({
   tier: Tier;
   userId: string;
 }) {
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [date, setDate] = useState(() => getCurrentDefaults().date);
+  const [startTime, setStartTime] = useState(() => getCurrentDefaults().startTime);
+  const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
   const [note, setNote] = useState("");
-  const [scheduleDate, setScheduleDate] = useState("");
-  const [scheduleStartTime, setScheduleStartTime] = useState("");
-  const [scheduleEndTime, setScheduleEndTime] = useState("");
+  const [scheduleDate, setScheduleDate] = useState(() => getCurrentDefaults().date);
+  const [scheduleStartTime, setScheduleStartTime] = useState(() => getCurrentDefaults().startTime);
+  const [scheduleDurationMinutes, setScheduleDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
   const [scheduleNote, setScheduleNote] = useState("");
   const [error, setError] = useState("");
   const [scheduleError, setScheduleError] = useState("");
@@ -52,6 +49,8 @@ export function ActivityLogsScreen({
     ownerUid: tier === "student" ? userId : undefined,
   });
   const visibleLogs = logs ?? liveRecords.records;
+  const endTime = addMinutesToTime(startTime, durationMinutes);
+  const scheduleEndTime = addMinutesToTime(scheduleStartTime, scheduleDurationMinutes);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,11 +66,13 @@ export function ActivityLogsScreen({
       date,
       startTime,
       endTime,
+      durationMinutes,
       note,
     });
-    setDate("");
-    setStartTime("");
-    setEndTime("");
+    const defaults = getCurrentDefaults();
+    setDate(defaults.date);
+    setStartTime(defaults.startTime);
+    setDurationMinutes(defaults.durationMinutes);
     setNote("");
   }
 
@@ -88,26 +89,14 @@ export function ActivityLogsScreen({
       date: scheduleDate,
       startTime: scheduleStartTime,
       endTime: scheduleEndTime,
+      durationMinutes: scheduleDurationMinutes,
       note: scheduleNote,
     });
-    setScheduleDate("");
-    setScheduleStartTime("");
-    setScheduleEndTime("");
+    const defaults = getCurrentDefaults();
+    setScheduleDate(defaults.date);
+    setScheduleStartTime(defaults.startTime);
+    setScheduleDurationMinutes(defaults.durationMinutes);
     setScheduleNote("");
-  }
-
-  function applyScheduleCurrentTime() {
-    const now = new Date();
-    setScheduleDate(formatDateInput(now));
-    setScheduleStartTime(formatTimeInput(now));
-    setScheduleEndTime(formatTimeInput(new Date(now.getTime() + 60 * 60 * 1000)));
-  }
-
-  function applyActivityCurrentTime() {
-    const now = new Date();
-    setDate(formatDateInput(now));
-    setStartTime(formatTimeInput(now));
-    setEndTime(formatTimeInput(new Date(now.getTime() + 60 * 60 * 1000)));
   }
 
   return (
@@ -120,9 +109,6 @@ export function ActivityLogsScreen({
       </div>
       <form aria-label="Schedule request" className="form-stack compact-form" onSubmit={handleCreateSchedule}>
         <h3>Schedule request</h3>
-        <button className="secondary-button" onClick={applyScheduleCurrentTime} type="button">
-          Use current time
-        </button>
         <label>
           Date
           <input value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} type="date" />
@@ -137,17 +123,30 @@ export function ActivityLogsScreen({
         </label>
         <label>
           End time
-          <input value={scheduleEndTime} onChange={(event) => setScheduleEndTime(event.target.value)} type="time" />
+          <input readOnly value={scheduleEndTime} type="time" />
+        </label>
+        <label>
+          Duration
+          <select
+            value={scheduleDurationMinutes}
+            onChange={(event) => setScheduleDurationMinutes(Number(event.target.value))}
+          >
+            {DURATION_OPTIONS.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes}
+              </option>
+            ))}
+          </select>
         </label>
         <div className="time-chip-grid" aria-label="Schedule duration options">
           {DURATION_OPTIONS.map((minutes) => (
             <button
               className="time-chip"
               key={minutes}
-              onClick={() => setScheduleEndTime(addMinutesToTime(scheduleStartTime, minutes))}
+              onClick={() => setScheduleDurationMinutes(minutes)}
               type="button"
             >
-              +{minutes} min
+              {minutes === 180 ? "+180 min" : `${minutes} min`}
             </button>
           ))}
         </div>
@@ -162,9 +161,6 @@ export function ActivityLogsScreen({
       </form>
       <form aria-label="Activity report" className="form-stack compact-form" onSubmit={handleCreate}>
         <h3>Activity report</h3>
-        <button className="secondary-button" onClick={applyActivityCurrentTime} type="button">
-          Use current time
-        </button>
         <label>
           Date
           <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
@@ -179,17 +175,27 @@ export function ActivityLogsScreen({
         </label>
         <label>
           End time
-          <input value={endTime} onChange={(event) => setEndTime(event.target.value)} type="time" />
+          <input readOnly value={endTime} type="time" />
+        </label>
+        <label>
+          Duration
+          <select value={durationMinutes} onChange={(event) => setDurationMinutes(Number(event.target.value))}>
+            {DURATION_OPTIONS.map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes}
+              </option>
+            ))}
+          </select>
         </label>
         <div className="time-chip-grid" aria-label="Activity duration options">
           {DURATION_OPTIONS.map((minutes) => (
             <button
               className="time-chip"
               key={minutes}
-              onClick={() => setEndTime(addMinutesToTime(startTime, minutes))}
+              onClick={() => setDurationMinutes(minutes)}
               type="button"
             >
-              +{minutes} min
+              {minutes === 180 ? "+180 min" : `${minutes} min`}
             </button>
           ))}
         </div>

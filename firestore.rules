@@ -92,6 +92,7 @@ service cloud.firestore {
           "date",
           "startTime",
           "endTime",
+          "durationMinutes",
           "note",
           "status",
           "reviewedBy",
@@ -111,6 +112,7 @@ service cloud.firestore {
             "date",
             "startTime",
             "endTime",
+            "durationMinutes",
             "note",
             "status",
             "reviewedBy",
@@ -131,7 +133,7 @@ service cloud.firestore {
           && request.resource.data.status == "pending"
           && request.resource.data.reviewedBy == null
           && request.resource.data.reviewedAt == null
-          && changedOnly(["date", "startTime", "endTime", "note", "updatedAt"])
+          && changedOnly(["date", "startTime", "endTime", "durationMinutes", "note", "updatedAt"])
         );
 
       allow delete: if isTeacher();
@@ -144,6 +146,7 @@ service cloud.firestore {
         && hasOnlyKeys(["type", "title", "body", "createdBy", "createdAt", "updatedAt"])
         && request.resource.data.createdBy == request.auth.uid
         && isValidPostType(request.resource.data.type)
+        && request.resource.data.body.size() <= 3000
         && (
           isTeacher()
           || request.resource.data.type == "activityReport"
@@ -157,6 +160,7 @@ service cloud.firestore {
           && request.resource.data.createdBy == resource.data.createdBy
           && request.resource.data.type == resource.data.type
           && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.body.size() <= 3000
           && changedOnly(["title", "body", "updatedAt"])
         );
 
@@ -166,6 +170,23 @@ service cloud.firestore {
           && resource.data.createdBy == request.auth.uid
           && resource.data.type == "activityReport"
         );
+    }
+
+    match /postBundles/{bundleId} {
+      allow read: if signedIn();
+
+      allow create, update: if signedIn()
+        && bundleId == "current"
+        && hasOnlyKeys(["posts", "updatedAt"])
+        && request.resource.data.posts is list
+        && request.resource.data.posts.size() <= 300
+        && request.resource.data.posts.all(post,
+          post.keys().hasOnly(["id", "type", "title", "body", "createdBy", "createdAt", "updatedAt"])
+          && isValidPostType(post.type)
+          && post.body.size() <= 3000
+        );
+
+      allow delete: if isTeacher();
     }
 
     match /activityLogs/{logId} {
@@ -179,6 +200,7 @@ service cloud.firestore {
           "date",
           "startTime",
           "endTime",
+          "durationMinutes",
           "note",
           "status",
           "recognizedBy",
@@ -199,6 +221,7 @@ service cloud.firestore {
             "date",
             "startTime",
             "endTime",
+            "durationMinutes",
             "note",
             "status",
             "recognizedBy",
@@ -218,7 +241,7 @@ service cloud.firestore {
           && request.resource.data.status == "submitted"
           && request.resource.data.recognizedBy == null
           && request.resource.data.recognizedAt == null
-          && changedOnly(["scheduleRequestId", "date", "startTime", "endTime", "note", "updatedAt"])
+          && changedOnly(["scheduleRequestId", "date", "startTime", "endTime", "durationMinutes", "note", "updatedAt"])
         );
 
       allow delete: if isTeacher();

@@ -21,6 +21,7 @@ describe("scheduleService", () => {
         date: "2026-06-23",
         startTime: "09:00",
         endTime: "10:00",
+        durationMinutes: 60,
         note: "Story class support",
       }),
     ).resolves.toBe("schedule-1");
@@ -30,6 +31,7 @@ describe("scheduleService", () => {
       date: "2026-06-23",
       startTime: "09:00",
       endTime: "10:00",
+      durationMinutes: 60,
       note: "Story class support",
       status: "pending",
       reviewedBy: null,

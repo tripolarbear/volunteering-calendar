@@ -22,6 +22,7 @@ describe("activityLogService", () => {
         date: "2026-06-23",
         startTime: "09:00",
         endTime: "10:00",
+        durationMinutes: 60,
         note: "Helped with reading class.",
       }),
     ).resolves.toBe("log-1");
@@ -32,6 +33,7 @@ describe("activityLogService", () => {
       date: "2026-06-23",
       startTime: "09:00",
       endTime: "10:00",
+      durationMinutes: 60,
       note: "Helped with reading class.",
       status: "submitted",
       recognizedBy: null,

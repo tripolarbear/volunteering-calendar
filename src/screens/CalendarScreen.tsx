@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { EmptyState } from "../components/EmptyState";
+import { getDurationMinutes } from "../domain/dateTime";
 import { useFirestoreRecords } from "../services/useFirestoreRecords";
 import type { ScheduleRequest, Tier, WithId } from "../types";
 
@@ -48,6 +49,9 @@ export function CalendarScreen({
     ...Array.from({ length: firstWeekday }, () => null),
     ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
   ];
+  const selectedDurationMinutes = selectedRequest
+    ? (selectedRequest.durationMinutes ?? getDurationMinutes(selectedRequest.startTime, selectedRequest.endTime))
+    : null;
 
   return (
     <section className="panel screen-grid">
@@ -106,22 +110,34 @@ export function CalendarScreen({
           >
             X
           </button>
-          <p className="eyebrow">Selected schedule</p>
-          <h3>{selectedRequest.note || "Volunteer shift"}</h3>
           <dl>
+            <div>
+              <dt>Title</dt>
+              <dd>{selectedRequest.note || "Volunteer shift"}</dd>
+            </div>
             <div>
               <dt>Date</dt>
               <dd>{selectedRequest.date}</dd>
             </div>
             <div>
-              <dt>Time</dt>
-              <dd>
-                {selectedRequest.startTime}-{selectedRequest.endTime}
-              </dd>
+              <dt>Start time</dt>
+              <dd>{selectedRequest.startTime}</dd>
+            </div>
+            <div>
+              <dt>End time</dt>
+              <dd>{selectedRequest.endTime}</dd>
+            </div>
+            <div>
+              <dt>Duration</dt>
+              <dd>{selectedDurationMinutes ? `${selectedDurationMinutes} min` : "Unknown"}</dd>
             </div>
             <div>
               <dt>Status</dt>
               <dd>{selectedRequest.status}</dd>
+            </div>
+            <div>
+              <dt>Note</dt>
+              <dd>{selectedRequest.note || "No note"}</dd>
             </div>
           </dl>
         </div>

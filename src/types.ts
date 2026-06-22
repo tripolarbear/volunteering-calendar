@@ -20,6 +20,7 @@ export interface CreateScheduleRequestInput {
   date: string;
   startTime: string;
   endTime: string;
+  durationMinutes: number;
   note: string;
 }
 
@@ -49,6 +50,7 @@ export interface CreateActivityLogInput {
   date: string;
   startTime: string;
   endTime: string;
+  durationMinutes: number;
   note: string;
 }
 
