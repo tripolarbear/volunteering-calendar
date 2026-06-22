@@ -57,12 +57,12 @@ export function ProfileScreen() {
             type="password"
           />
         </label>
-        {isTeacher ? <p className="muted">You are already a teacher. No passcode is needed.</p> : null}
         {message ? <p className="form-success">{message}</p> : null}
         {error ? <p className="form-error">{error}</p> : null}
         <button className="primary-button" disabled={isTeacher} type="submit">
           Upgrade to teacher
         </button>
+        {isTeacher ? <p className="muted">You are already a teacher. No passcode is needed.</p> : null}
       </form>
     </section>
   );

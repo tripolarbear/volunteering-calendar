@@ -11,7 +11,7 @@ export function DashboardScreen({
   requests,
   tier,
 }: {
-  onNavigate(screen: "schedule" | "calendar" | "board" | "logs"): void;
+  onNavigate(screen: "calendar" | "board" | "logs"): void;
   requests?: Array<WithId<ScheduleRequest>>;
   tier: Tier;
 }) {
@@ -38,11 +38,9 @@ export function DashboardScreen({
         </div>
         <div className="quick-actions" aria-label="Suggested next steps">
           {isTeacher ? (
-            <>
-              <button className="primary-button" onClick={() => onNavigate("schedule")} type="button">
-                Review schedule requests
-              </button>
-            </>
+            <button className="primary-button" onClick={() => setRequestsLoaded(true)} type="button">
+              Load schedule requests
+            </button>
           ) : (
             <>
               <button className="primary-button" onClick={() => onNavigate("logs")} type="button">
@@ -55,9 +53,11 @@ export function DashboardScreen({
           )}
         </div>
       </div>
-      <button className="primary-button dashboard-load-button" onClick={() => setRequestsLoaded(true)} type="button">
-        Load schedule requests
-      </button>
+      {!isTeacher ? (
+        <button className="primary-button dashboard-load-button" onClick={() => setRequestsLoaded(true)} type="button">
+          Load schedule requests
+        </button>
+      ) : null}
       {requestsLoaded ? (
         <div className="dashboard-pending">
           <h3>Pending requests</h3>

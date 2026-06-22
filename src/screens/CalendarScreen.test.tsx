@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CalendarScreen } from "./CalendarScreen";
 import { useFirestoreRecords } from "../services/useFirestoreRecords";
@@ -71,6 +72,52 @@ describe("CalendarScreen", () => {
     const dayCell = screen.getByLabelText("2026-06-23");
     expect(within(dayCell).getByText("Reading support")).toBeInTheDocument();
     expect(within(dayCell).getByText("Math games")).toBeInTheDocument();
+  });
+
+  it("shows at most two event boxes per day and summarizes the remaining events", () => {
+    render(
+      <CalendarScreen
+        tier="teacher"
+        userId="teacher-1"
+        requests={[
+          scheduleRequest({ id: "schedule-1", note: "Reading support" }),
+          scheduleRequest({ id: "schedule-2", note: "Math games" }),
+          scheduleRequest({ id: "schedule-3", note: "Snack prep" }),
+          scheduleRequest({ id: "schedule-4", note: "Cleanup" }),
+        ]}
+      />,
+    );
+
+    const dayCell = screen.getByLabelText("2026-06-23");
+    expect(within(dayCell).getByText("Reading support")).toBeInTheDocument();
+    expect(within(dayCell).getByText("Math games")).toBeInTheDocument();
+    expect(within(dayCell).getByText("+2 events")).toBeInTheDocument();
+    expect(within(dayCell).queryByText("Snack prep")).not.toBeInTheDocument();
+    expect(within(dayCell).queryByText("Cleanup")).not.toBeInTheDocument();
+  });
+
+  it("opens event details when an event is clicked and closes them with the X button", async () => {
+    const user = userEvent.setup();
+    render(
+      <CalendarScreen
+        tier="student"
+        userId="student-1"
+        requests={[scheduleRequest({ id: "schedule-detail", note: "Reading support" })]}
+      />,
+    );
+
+    expect(screen.queryByRole("dialog", { name: "Schedule details" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Reading support 09:00-10:00" }));
+
+    const dialog = screen.getByRole("dialog", { name: "Schedule details" });
+    expect(within(dialog).getByText("Reading support")).toBeInTheDocument();
+    expect(within(dialog).getByText("2026-06-23")).toBeInTheDocument();
+    expect(within(dialog).getByText("09:00-10:00")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Close details" }));
+
+    expect(screen.queryByRole("dialog", { name: "Schedule details" })).not.toBeInTheDocument();
   });
 
   it("subscribes to only the signed-in student's approved requests for students", () => {

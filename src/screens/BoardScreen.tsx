@@ -21,12 +21,17 @@ export function BoardScreen({
   const [type, setType] = useState<BoardPostType>(tier === "teacher" ? "notice" : "activityReport");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [writerOpen, setWriterOpen] = useState(false);
   const liveRecords = useFirestoreRecords<BoardPost>({ collectionName: "posts", enabled: !posts });
   const allPosts = posts ?? liveRecords.records;
-  const notices = allPosts.filter((post) => post.type === "notice");
-  const reports = allPosts.filter(
-    (post) => post.type === "activityReport" && (tier === "teacher" || post.createdBy === userId),
-  );
+  const visiblePosts = allPosts
+    .filter((post) => post.type === "notice" || (post.type === "activityReport" && (tier === "teacher" || post.createdBy === userId)))
+    .sort((a, b) => {
+      if (a.type === b.type) {
+        return 0;
+      }
+      return a.type === "notice" ? -1 : 1;
+    });
   const postTypes =
     tier === "teacher" ? teacherPostTypes : [{ label: "Activity Report", value: "activityReport" as const }];
 
@@ -35,6 +40,7 @@ export function BoardScreen({
     await createPost({ type, title, body, createdBy: userId });
     setTitle("");
     setBody("");
+    setWriterOpen(false);
   }
 
   return (
@@ -45,57 +51,53 @@ export function BoardScreen({
           <h2>Notices and activity reports</h2>
         </div>
       </div>
-      <form className="form-stack compact-form" onSubmit={handleCreate}>
-        <label>
-          Post type
-          <select value={type} onChange={(event) => setType(event.target.value as BoardPostType)}>
-            {postTypes.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Title
-          <input value={title} onChange={(event) => setTitle(event.target.value)} />
-        </label>
-        <label>
-          Body
-          <textarea value={body} onChange={(event) => setBody(event.target.value)} />
-        </label>
-        <button className="primary-button" type="submit">
-          Create post
-        </button>
-      </form>
-      <div className="board-section">
-        <h3>Notices</h3>
-        <div className="item-list">
-          {notices.length === 0 ? <EmptyState message="No notices yet." /> : null}
-          {notices.map((post) => (
-            <article className="list-item list-item--single" key={post.id}>
-              <div>
-                <strong>{post.title}</strong>
-                <p>{post.body}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-      <div className="board-section">
-        <h3>{tier === "teacher" ? "All activity reports" : "My activity reports"}</h3>
-        <div className="item-list">
-          {reports.length === 0 ? <EmptyState message="No activity reports yet." /> : null}
-          {reports.map((post) => (
-            <article className="list-item list-item--single" key={post.id}>
-              <div>
-                <strong>{post.title}</strong>
-                <p>{post.body}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
+      {writerOpen ? (
+        <form aria-label="Write board post" className="form-stack board-writer" onSubmit={handleCreate}>
+          <label>
+            Post type
+            <select value={type} onChange={(event) => setType(event.target.value as BoardPostType)}>
+              {postTypes.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Title
+            <input value={title} onChange={(event) => setTitle(event.target.value)} />
+          </label>
+          <label>
+            Body
+            <textarea value={body} onChange={(event) => setBody(event.target.value)} />
+          </label>
+          <button className="primary-button" type="submit">
+            Create post
+          </button>
+        </form>
+      ) : null}
+      {visiblePosts.length === 0 ? <EmptyState message="No posts yet." /> : null}
+      <ul aria-label="Board posts" className="board-list">
+        {visiblePosts.map((post) => (
+          <li
+            aria-label={post.type === "notice" ? "Notice post" : "Activity report post"}
+            className={post.type === "notice" ? "board-row board-row--notice" : "board-row"}
+            key={post.id}
+          >
+            <span className="board-row-type" aria-hidden="true">
+              {post.type === "notice" ? "!" : "Q"}
+            </span>
+            <div className="board-row-main">
+              <strong>{post.title}</strong>
+              <p>{post.body}</p>
+            </div>
+            <span className="board-row-label">{post.type === "notice" ? "Notice" : "Activity Report"}</span>
+          </li>
+        ))}
+      </ul>
+      <button className="primary-button board-write-button" onClick={() => setWriterOpen(true)} type="button">
+        Write post
+      </button>
     </section>
   );
 }

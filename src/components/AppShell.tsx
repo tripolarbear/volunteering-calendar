@@ -2,11 +2,10 @@ import type { ReactNode } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { RoleBadge } from "./RoleBadge";
 
-export type ScreenKey = "dashboard" | "schedule" | "calendar" | "board" | "logs" | "profile";
+export type ScreenKey = "dashboard" | "calendar" | "board" | "logs" | "profile";
 
 const navItems: Array<{ key: ScreenKey; label: string }> = [
   { key: "dashboard", label: "Dashboard" },
-  { key: "schedule", label: "Schedule" },
   { key: "calendar", label: "Calendar" },
   { key: "logs", label: "Hours" },
   { key: "board", label: "Board" },

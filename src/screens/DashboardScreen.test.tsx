@@ -20,6 +20,7 @@ describe("DashboardScreen", () => {
     );
 
     expect(screen.queryByText("Reading support")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Review schedule requests" })).not.toBeInTheDocument();
     expect(screen.queryByText("Pending schedule requests")).not.toBeInTheDocument();
     expect(screen.queryByText("Activity logs awaiting recognition")).not.toBeInTheDocument();
     expect(screen.queryByText("Internal board posts")).not.toBeInTheDocument();
@@ -32,13 +33,12 @@ describe("DashboardScreen", () => {
     expect(screen.queryByText("Approved support")).not.toBeInTheDocument();
   });
 
-  it("routes schedule review to the Schedule page and requests to Hours", async () => {
+  it("routes student requests to Hours without exposing a Schedule shortcut", async () => {
     const user = userEvent.setup();
     const onNavigate = vi.fn();
 
     const { rerender } = render(<DashboardScreen onNavigate={onNavigate} requests={[]} tier="teacher" />);
-    await user.click(screen.getByRole("button", { name: "Review schedule requests" }));
-    expect(onNavigate).toHaveBeenCalledWith("schedule");
+    expect(screen.queryByRole("button", { name: "Review schedule requests" })).not.toBeInTheDocument();
 
     rerender(<DashboardScreen onNavigate={onNavigate} requests={[]} tier="student" />);
     await user.click(screen.getByRole("button", { name: "Request a volunteer shift" }));

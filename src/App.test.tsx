@@ -155,6 +155,7 @@ describe("App", () => {
 
     expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Dashboard" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Schedule" })).not.toBeInTheDocument();
     expect(screen.getByText("student")).toBeInTheDocument();
   });
 
@@ -221,8 +222,7 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Request schedule" })).toBeInTheDocument();
   });
 
-  it("offers teacher review shortcuts from the dashboard", async () => {
-    const user = userEvent.setup();
+  it("keeps teacher schedule review on the dashboard", async () => {
     mockedUseAuth.mockReturnValue({
       user: { uid: "teacher-1" } as never,
       profile: {
@@ -243,10 +243,8 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "Teacher review desk" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Review schedule requests" }));
-
-    expect(screen.getByRole("heading", { name: "Review volunteer schedule requests" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Request schedule" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Review schedule requests" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Load schedule requests" })).toBeInTheDocument();
   });
 
   it("upgrades the current user to teacher from profile", async () => {
@@ -335,7 +333,10 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Profile" }));
 
     expect(screen.getByLabelText("Teacher passcode")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Upgrade to teacher" })).toBeDisabled();
-    expect(screen.getByText("You are already a teacher. No passcode is needed.")).toBeInTheDocument();
+    const upgradeButton = screen.getByRole("button", { name: "Upgrade to teacher" });
+    const alreadyTeacherMessage = screen.getByText("You are already a teacher. No passcode is needed.");
+    expect(upgradeButton).toBeDisabled();
+    expect(alreadyTeacherMessage).toBeInTheDocument();
+    expect(upgradeButton.compareDocumentPosition(alreadyTeacherMessage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
