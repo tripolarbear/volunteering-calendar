@@ -14,7 +14,6 @@ export function createScheduleService(deps: ScheduleServiceDeps) {
       status: "pending",
       reviewedBy: null,
       reviewedAt: null,
-      googleCalendarEventId: null,
       createdAt: timestamp,
       updatedAt: timestamp,
     });
@@ -33,17 +32,9 @@ export function createScheduleService(deps: ScheduleServiceDeps) {
     });
   }
 
-  async function markScheduleGoogleEventCreated(requestId: string, eventId: string) {
-    await deps.updateDocument("scheduleRequests", requestId, {
-      googleCalendarEventId: eventId,
-      updatedAt: deps.now(),
-    });
-  }
-
   return {
     createScheduleRequest,
     reviewScheduleRequest,
-    markScheduleGoogleEventCreated,
   };
 }
 
@@ -79,10 +70,5 @@ export async function reviewScheduleRequest(
 ) {
   const service = await getFirebaseScheduleService();
   return service.reviewScheduleRequest(requestId, reviewerUid, status);
-}
-
-export async function markScheduleGoogleEventCreated(requestId: string, eventId: string) {
-  const service = await getFirebaseScheduleService();
-  return service.markScheduleGoogleEventCreated(requestId, eventId);
 }
 

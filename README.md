@@ -1,13 +1,13 @@
 # Volunteer Calendar
 
-Login-only internal web app for daycare volunteer coordination. Students request schedules, write class plans, introduce themselves, and submit activity logs. Teachers approve schedules, review logs, recognize volunteer hours, and add approved schedules to Google Calendar.
+Login-only internal web app for daycare volunteer coordination. Students request schedules, write class plans, introduce themselves, and submit activity logs. Teachers approve schedules, review logs, recognize volunteer hours, and load approved schedules from Firebase as an internal calendar.
 
 ## Stack
 
 - React + Vite + TypeScript
+- Electron
 - Firebase Authentication
 - Firestore
-- Google Identity Services + Google Calendar API
 - Vitest + Testing Library
 
 ## Setup
@@ -18,28 +18,15 @@ Login-only internal web app for daycare volunteer coordination. Students request
    npm install
    ```
 
-2. Copy the example environment file.
+2. Confirm the Firebase web app config in `src/firebase.public.config.ts`.
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+   This file is bundled into the app and should only contain Firebase client
+   configuration that is public by design. Do not put service account JSON,
+   private keys, Admin SDK credentials, or third-party API secrets in this file.
 
-3. Fill `.env`.
+3. In Firebase Console, enable Email/Password Authentication.
 
-   ```env
-   VITE_FIREBASE_API_KEY=
-   VITE_FIREBASE_AUTH_DOMAIN=
-   VITE_FIREBASE_PROJECT_ID=
-   VITE_FIREBASE_STORAGE_BUCKET=
-   VITE_FIREBASE_MESSAGING_SENDER_ID=
-   VITE_FIREBASE_APP_ID=
-   VITE_GOOGLE_CLIENT_ID=
-   VITE_GOOGLE_CALENDAR_ID=primary
-   ```
-
-4. In Firebase Console, enable Email/Password Authentication.
-
-5. In Firestore, create the teacher passcode config document.
+4. In Firestore, create the teacher passcode config document.
 
    Collection: `appConfig`
 
@@ -53,14 +40,24 @@ Login-only internal web app for daycare volunteer coordination. Students request
    }
    ```
 
-6. Publish `firestore.rules` in Firebase Console or with Firebase CLI.
+5. Publish `firestore.rules` in Firebase Console or with Firebase CLI.
 
-7. In Google Cloud Console, enable Google Calendar API and create an OAuth client ID for a web application. Put that client ID in `VITE_GOOGLE_CLIENT_ID`.
-
-8. Start the app.
+6. Start the app.
 
    ```powershell
    npm run dev
+   ```
+
+   To run the desktop app during development:
+
+   ```powershell
+   npm run electron:dev
+   ```
+
+   To build the Windows installer and portable exe:
+
+   ```powershell
+   npm run dist:win
    ```
 
 ## Behavior
@@ -70,7 +67,7 @@ Login-only internal web app for daycare volunteer coordination. Students request
 - Students can create schedule requests, board posts for volunteer intros and lesson plans, and activity logs.
 - Teachers can approve or reject schedule requests.
 - Teachers can recognize submitted activity logs.
-- Teachers can add approved schedule requests to Google Calendar. The created event ID is stored on the request.
+- Users can load approved schedules as an internal Firebase-backed calendar on request. The calendar query does not start until the Load calendar button is clicked.
 
 ## Security Note
 

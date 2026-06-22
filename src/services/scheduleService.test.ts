@@ -34,7 +34,6 @@ describe("scheduleService", () => {
       status: "pending",
       reviewedBy: null,
       reviewedAt: null,
-      googleCalendarEventId: null,
       createdAt: "now",
       updatedAt: "now",
     });
@@ -53,15 +52,5 @@ describe("scheduleService", () => {
     });
   });
 
-  it("stores Google Calendar event ids", async () => {
-    const service = createScheduleService(deps);
-
-    await service.markScheduleGoogleEventCreated("schedule-1", "google-event-1");
-
-    expect(deps.updateDocument).toHaveBeenCalledWith("scheduleRequests", "schedule-1", {
-      googleCalendarEventId: "google-event-1",
-      updatedAt: "now",
-    });
-  });
 });
 

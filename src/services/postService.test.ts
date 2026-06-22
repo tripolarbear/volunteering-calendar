@@ -16,7 +16,7 @@ describe("postService", () => {
 
     await expect(
       service.createPost({
-        type: "lessonPlan",
+        type: "activityReport",
         title: "Reading activity",
         body: "Prepare picture books and name tags.",
         createdBy: "student-1",
@@ -24,7 +24,7 @@ describe("postService", () => {
     ).resolves.toBe("post-1");
 
     expect(deps.addDocument).toHaveBeenCalledWith("posts", {
-      type: "lessonPlan",
+      type: "activityReport",
       title: "Reading activity",
       body: "Prepare picture books and name tags.",
       createdBy: "student-1",

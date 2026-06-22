@@ -3,14 +3,15 @@ import { describe, expect, it } from "vitest";
 import { ActivityLogsScreen } from "./ActivityLogsScreen";
 
 describe("ActivityLogsScreen", () => {
-  it("shows activity log form to students", () => {
+  it("shows the same request and activity log forms to students", () => {
     render(<ActivityLogsScreen logs={[]} tier="student" userId="student-1" />);
 
+    expect(screen.getByRole("button", { name: "Request schedule" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Submit activity log" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Recognize hours" })).not.toBeInTheDocument();
   });
 
-  it("shows recognition controls to teachers", () => {
+  it("shows the same request and activity log forms to teachers", () => {
     render(
       <ActivityLogsScreen
         tier="teacher"
@@ -34,6 +35,7 @@ describe("ActivityLogsScreen", () => {
       />,
     );
 
+    expect(screen.getByRole("button", { name: "Request schedule" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Recognize hours" })).toBeInTheDocument();
   });
 });

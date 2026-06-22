@@ -7,6 +7,7 @@ import { BoardScreen } from "./screens/BoardScreen";
 import { CalendarScreen } from "./screens/CalendarScreen";
 import { DashboardScreen } from "./screens/DashboardScreen";
 import { ProfileScreen } from "./screens/ProfileScreen";
+import { ScheduleScreen } from "./screens/ScheduleScreen";
 
 export default function App() {
   const auth = useAuth();
@@ -26,7 +27,10 @@ export default function App() {
   }
 
   const screens: Record<ScreenKey, ReactNode> = {
-    dashboard: <DashboardScreen logs={[]} posts={[]} requests={[]} tier={auth.profile.tier} />,
+    dashboard: (
+      <DashboardScreen onNavigate={setActiveScreen} tier={auth.profile.tier} />
+    ),
+    schedule: <ScheduleScreen tier={auth.profile.tier} userId={auth.profile.uid} />,
     calendar: <CalendarScreen tier={auth.profile.tier} userId={auth.profile.uid} />,
     board: <BoardScreen tier={auth.profile.tier} userId={auth.profile.uid} />,
     logs: <ActivityLogsScreen tier={auth.profile.tier} userId={auth.profile.uid} />,

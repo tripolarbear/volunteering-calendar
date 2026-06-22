@@ -13,7 +13,7 @@ export interface UserProfile {
 
 export type ScheduleStatus = "pending" | "approved" | "rejected";
 export type ActivityLogStatus = "submitted" | "recognized";
-export type BoardPostType = "notice" | "volunteerIntro" | "lessonPlan";
+export type BoardPostType = "notice" | "activityReport";
 
 export interface CreateScheduleRequestInput {
   createdBy: string;
@@ -27,7 +27,6 @@ export interface ScheduleRequest extends CreateScheduleRequestInput {
   status: ScheduleStatus;
   reviewedBy: string | null;
   reviewedAt: TimestampValue | null;
-  googleCalendarEventId: string | null;
   createdAt: TimestampValue;
   updatedAt: TimestampValue;
 }

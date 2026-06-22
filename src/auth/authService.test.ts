@@ -53,7 +53,9 @@ describe("authService", () => {
   it("upgrades a user to teacher when the passcode matches", async () => {
     const service = createAuthService(deps);
 
-    await expect(service.upgradeCurrentUserToTeacher("user-1", "qwer1234")).resolves.toBe(true);
+    await expect(service.upgradeCurrentUserToTeacher("user-1", "qwer1234")).resolves.toEqual({
+      ok: true,
+    });
 
     expect(deps.updateUserProfile).toHaveBeenCalledWith("user-1", {
       tier: "teacher",
@@ -64,7 +66,22 @@ describe("authService", () => {
   it("rejects teacher upgrade when the passcode does not match", async () => {
     const service = createAuthService(deps);
 
-    await expect(service.upgradeCurrentUserToTeacher("user-1", "wrong")).resolves.toBe(false);
+    await expect(service.upgradeCurrentUserToTeacher("user-1", "wrong")).resolves.toEqual({
+      ok: false,
+      reason: "passcode-mismatch",
+    });
+
+    expect(deps.updateUserProfile).not.toHaveBeenCalled();
+  });
+
+  it("reports missing teacher passcode configuration separately", async () => {
+    deps.getTeacherPasscode = vi.fn().mockResolvedValue(null);
+    const service = createAuthService(deps);
+
+    await expect(service.upgradeCurrentUserToTeacher("user-1", "qwer1234")).resolves.toEqual({
+      ok: false,
+      reason: "missing-config",
+    });
 
     expect(deps.updateUserProfile).not.toHaveBeenCalled();
   });

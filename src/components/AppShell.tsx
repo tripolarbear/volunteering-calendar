@@ -2,13 +2,14 @@ import type { ReactNode } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { RoleBadge } from "./RoleBadge";
 
-export type ScreenKey = "dashboard" | "calendar" | "board" | "logs" | "profile";
+export type ScreenKey = "dashboard" | "schedule" | "calendar" | "board" | "logs" | "profile";
 
 const navItems: Array<{ key: ScreenKey; label: string }> = [
   { key: "dashboard", label: "Dashboard" },
+  { key: "schedule", label: "Schedule" },
   { key: "calendar", label: "Calendar" },
+  { key: "logs", label: "Hours" },
   { key: "board", label: "Board" },
-  { key: "logs", label: "Activity Logs" },
   { key: "profile", label: "Profile" },
 ];
 
@@ -22,6 +23,12 @@ export function AppShell({
   onScreenChange(screen: ScreenKey): void;
 }) {
   const { profile, signOut } = useAuth();
+
+  function handleSignOut() {
+    if (window.confirm("Sign out of Volunteer Calendar?")) {
+      signOut();
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -43,7 +50,11 @@ export function AppShell({
             </button>
           ))}
         </nav>
-        <button className="text-button" onClick={signOut} type="button">
+        <div className="sidebar-workflow" aria-label="Workflow">
+          <span>Workflow</span>
+          <strong>{profile?.tier === "teacher" ? "Review requests and monitor calendars." : "Request a shift, then log hours."}</strong>
+        </div>
+        <button className="text-button" onClick={handleSignOut} type="button">
           Sign out
         </button>
       </aside>

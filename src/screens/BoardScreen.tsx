@@ -4,14 +4,9 @@ import { createPost } from "../services/postService";
 import { useFirestoreRecords } from "../services/useFirestoreRecords";
 import type { BoardPost, BoardPostType, Tier, WithId } from "../types";
 
-const studentPostTypes: Array<{ label: string; value: BoardPostType }> = [
-  { label: "Volunteer intro", value: "volunteerIntro" },
-  { label: "Lesson plan", value: "lessonPlan" },
-];
-
 const teacherPostTypes: Array<{ label: string; value: BoardPostType }> = [
   { label: "Notice", value: "notice" },
-  ...studentPostTypes,
+  { label: "Activity Report", value: "activityReport" },
 ];
 
 export function BoardScreen({
@@ -23,12 +18,17 @@ export function BoardScreen({
   tier: Tier;
   userId: string;
 }) {
-  const [type, setType] = useState<BoardPostType>(tier === "teacher" ? "notice" : "volunteerIntro");
+  const [type, setType] = useState<BoardPostType>(tier === "teacher" ? "notice" : "activityReport");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const liveRecords = useFirestoreRecords<BoardPost>({ collectionName: "posts", enabled: !posts });
-  const visiblePosts = posts ?? liveRecords.records;
-  const postTypes = tier === "teacher" ? teacherPostTypes : studentPostTypes;
+  const allPosts = posts ?? liveRecords.records;
+  const notices = allPosts.filter((post) => post.type === "notice");
+  const reports = allPosts.filter(
+    (post) => post.type === "activityReport" && (tier === "teacher" || post.createdBy === userId),
+  );
+  const postTypes =
+    tier === "teacher" ? teacherPostTypes : [{ label: "Activity Report", value: "activityReport" as const }];
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +42,7 @@ export function BoardScreen({
       <div className="section-heading">
         <div>
           <p className="eyebrow">Board</p>
-          <h2>Posts and class plans</h2>
+          <h2>Notices and activity reports</h2>
         </div>
       </div>
       <form className="form-stack compact-form" onSubmit={handleCreate}>
@@ -68,17 +68,33 @@ export function BoardScreen({
           Create post
         </button>
       </form>
-      <div className="item-list">
-        {visiblePosts.length === 0 ? <EmptyState message="No posts yet." /> : null}
-        {visiblePosts.map((post) => (
-          <article className="list-item" key={post.id}>
-            <div>
-              <strong>{post.title}</strong>
-              <p className="muted">{post.type}</p>
-              <p>{post.body}</p>
-            </div>
-          </article>
-        ))}
+      <div className="board-section">
+        <h3>Notices</h3>
+        <div className="item-list">
+          {notices.length === 0 ? <EmptyState message="No notices yet." /> : null}
+          {notices.map((post) => (
+            <article className="list-item list-item--single" key={post.id}>
+              <div>
+                <strong>{post.title}</strong>
+                <p>{post.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+      <div className="board-section">
+        <h3>{tier === "teacher" ? "All activity reports" : "My activity reports"}</h3>
+        <div className="item-list">
+          {reports.length === 0 ? <EmptyState message="No activity reports yet." /> : null}
+          {reports.map((post) => (
+            <article className="list-item list-item--single" key={post.id}>
+              <div>
+                <strong>{post.title}</strong>
+                <p>{post.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );

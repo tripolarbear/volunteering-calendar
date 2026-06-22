@@ -6,89 +6,226 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function userDoc(uid) {
-      return get(/databases/$(database)/documents/users/$(uid));
-    }
-
     function isSelf(uid) {
       return signedIn() && request.auth.uid == uid;
     }
 
-    function isTeacher() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && userDoc(request.auth.uid).data.tier == "teacher";
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
     }
 
-    function onlyChanged(keys) {
+    function signedInUserProfileExists() {
+      return signedIn() && exists(userPath(request.auth.uid));
+    }
+
+    function signedInUserProfile() {
+      return get(userPath(request.auth.uid));
+    }
+
+    function isTeacher() {
+      return signedInUserProfileExists()
+        && signedInUserProfile().data.tier == "teacher";
+    }
+
+    function changedOnly(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
-    match /appConfig/{configId} {
-      allow read: if signedIn();
-      allow write: if isTeacher();
+    function hasOnlyKeys(keys) {
+      return request.resource.data.keys().hasOnly(keys);
+    }
+
+    function isValidTier(tier) {
+      return tier in ["student", "teacher"];
+    }
+
+    function isValidScheduleStatus(status) {
+      return status in ["pending", "approved", "rejected"];
+    }
+
+    function isValidActivityStatus(status) {
+      return status in ["submitted", "recognized"];
+    }
+
+    function isValidPostType(type) {
+      return type in ["notice", "activityReport"];
     }
 
     match /users/{uid} {
       allow read: if isSelf(uid) || isTeacher();
+
       allow create: if isSelf(uid)
+        && hasOnlyKeys(["uid", "email", "displayName", "tier", "createdAt", "updatedAt"])
         && request.resource.data.uid == uid
         && request.resource.data.tier == "student";
+
       allow update: if isSelf(uid)
+        && hasOnlyKeys(["uid", "email", "displayName", "tier", "createdAt", "updatedAt"])
         && request.resource.data.uid == uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && isValidTier(request.resource.data.tier)
         && (
-          request.resource.data.tier == resource.data.tier
-          || (resource.data.tier == "student" && request.resource.data.tier == "teacher")
+          changedOnly(["displayName", "updatedAt"])
+          || (
+            resource.data.tier == "student"
+            && request.resource.data.tier == "teacher"
+            && changedOnly(["tier", "updatedAt"])
+          )
         );
+
+      allow delete: if false;
+    }
+
+    match /appConfig/{configId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isTeacher();
     }
 
     match /scheduleRequests/{requestId} {
-      allow read: if isTeacher() || (signedIn() && resource.data.createdBy == request.auth.uid);
+      allow read: if isTeacher()
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+
       allow create: if signedIn()
+        && hasOnlyKeys([
+          "createdBy",
+          "date",
+          "startTime",
+          "endTime",
+          "note",
+          "status",
+          "reviewedBy",
+          "reviewedAt",
+          "createdAt",
+          "updatedAt"
+        ])
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == "pending"
         && request.resource.data.reviewedBy == null
         && request.resource.data.reviewedAt == null;
-      allow update: if isTeacher()
-        || (
+
+      allow update: if (
+          isTeacher()
+          && hasOnlyKeys([
+            "createdBy",
+            "date",
+            "startTime",
+            "endTime",
+            "note",
+            "status",
+            "reviewedBy",
+            "reviewedAt",
+            "createdAt",
+            "updatedAt"
+          ])
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt
+          && isValidScheduleStatus(request.resource.data.status)
+          && changedOnly(["status", "reviewedBy", "reviewedAt", "updatedAt"])
+          && request.resource.data.status in ["approved", "rejected"]
+          && request.resource.data.reviewedBy == request.auth.uid
+        ) || (
           signedIn()
           && resource.data.createdBy == request.auth.uid
           && resource.data.status == "pending"
           && request.resource.data.status == "pending"
-          && onlyChanged(["date", "startTime", "endTime", "note", "updatedAt"])
+          && request.resource.data.reviewedBy == null
+          && request.resource.data.reviewedAt == null
+          && changedOnly(["date", "startTime", "endTime", "note", "updatedAt"])
         );
+
       allow delete: if isTeacher();
     }
 
     match /posts/{postId} {
       allow read: if signedIn();
+
       allow create: if signedIn()
+        && hasOnlyKeys(["type", "title", "body", "createdBy", "createdAt", "updatedAt"])
         && request.resource.data.createdBy == request.auth.uid
+        && isValidPostType(request.resource.data.type)
         && (
           isTeacher()
-          || request.resource.data.type in ["volunteerIntro", "lessonPlan"]
+          || request.resource.data.type == "activityReport"
         );
-      allow update, delete: if isTeacher()
-        || (signedIn() && resource.data.createdBy == request.auth.uid && resource.data.type in ["volunteerIntro", "lessonPlan"]);
-    }
 
-    match /activityLogs/{logId} {
-      allow read: if isTeacher() || (signedIn() && resource.data.createdBy == request.auth.uid);
-      allow create: if signedIn()
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.status == "submitted"
-        && request.resource.data.recognizedBy == null
-        && request.resource.data.recognizedAt == null;
       allow update: if isTeacher()
         || (
           signedIn()
           && resource.data.createdBy == request.auth.uid
+          && resource.data.type == "activityReport"
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.type == resource.data.type
+          && request.resource.data.createdAt == resource.data.createdAt
+          && changedOnly(["title", "body", "updatedAt"])
+        );
+
+      allow delete: if isTeacher()
+        || (
+          signedIn()
+          && resource.data.createdBy == request.auth.uid
+          && resource.data.type == "activityReport"
+        );
+    }
+
+    match /activityLogs/{logId} {
+      allow read: if isTeacher()
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+
+      allow create: if signedIn()
+        && hasOnlyKeys([
+          "createdBy",
+          "scheduleRequestId",
+          "date",
+          "startTime",
+          "endTime",
+          "note",
+          "status",
+          "recognizedBy",
+          "recognizedAt",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "submitted"
+        && request.resource.data.recognizedBy == null
+        && request.resource.data.recognizedAt == null;
+
+      allow update: if (
+          isTeacher()
+          && hasOnlyKeys([
+            "createdBy",
+            "scheduleRequestId",
+            "date",
+            "startTime",
+            "endTime",
+            "note",
+            "status",
+            "recognizedBy",
+            "recognizedAt",
+            "createdAt",
+            "updatedAt"
+          ])
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.status == "recognized"
+          && request.resource.data.recognizedBy == request.auth.uid
+          && changedOnly(["status", "recognizedBy", "recognizedAt", "updatedAt"])
+        ) || (
+          signedIn()
+          && resource.data.createdBy == request.auth.uid
           && resource.data.status == "submitted"
           && request.resource.data.status == "submitted"
-          && onlyChanged(["scheduleRequestId", "date", "startTime", "endTime", "note", "updatedAt"])
+          && request.resource.data.recognizedBy == null
+          && request.resource.data.recognizedAt == null
+          && changedOnly(["scheduleRequestId", "date", "startTime", "endTime", "note", "updatedAt"])
         );
+
       allow delete: if isTeacher();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
-

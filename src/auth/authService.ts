@@ -1,5 +1,9 @@
 import type { UserProfile } from "../types";
 
+export type TeacherUpgradeResult =
+  | { ok: true }
+  | { ok: false; reason: "missing-config" | "passcode-mismatch" };
+
 export interface AuthServiceDeps {
   getUserProfile(uid: string): Promise<UserProfile | null>;
   createUserProfile(profile: UserProfile): Promise<void>;
@@ -28,15 +32,19 @@ export function createAuthService(deps: AuthServiceDeps) {
 
   async function upgradeCurrentUserToTeacher(uid: string, passcode: string) {
     const configuredPasscode = await deps.getTeacherPasscode();
-    if (!configuredPasscode || configuredPasscode !== passcode) {
-      return false;
+    if (!configuredPasscode) {
+      return { ok: false, reason: "missing-config" } satisfies TeacherUpgradeResult;
+    }
+
+    if (configuredPasscode !== passcode) {
+      return { ok: false, reason: "passcode-mismatch" } satisfies TeacherUpgradeResult;
     }
 
     await deps.updateUserProfile(uid, {
       tier: "teacher",
       updatedAt: deps.now(),
     });
-    return true;
+    return { ok: true } satisfies TeacherUpgradeResult;
   }
 
   return {

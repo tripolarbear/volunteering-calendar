@@ -6,13 +6,21 @@ interface UseFirestoreRecordsOptions {
   enabled: boolean;
   ownerField?: string;
   ownerUid?: string;
+  filters?: ReadonlyArray<{
+    field: string;
+    op: "==";
+    value: unknown;
+  }>;
 }
+
+const EMPTY_FILTERS: NonNullable<UseFirestoreRecordsOptions["filters"]> = [];
 
 export function useFirestoreRecords<T>({
   collectionName,
   enabled,
   ownerField,
   ownerUid,
+  filters = EMPTY_FILTERS,
 }: UseFirestoreRecordsOptions) {
   const [records, setRecords] = useState<Array<WithId<T>>>([]);
   const [loading, setLoading] = useState(enabled);
@@ -36,7 +44,11 @@ export function useFirestoreRecords<T>({
       }
 
       const base = collection(db, collectionName);
-      const target = ownerField && ownerUid ? query(base, where(ownerField, "==", ownerUid)) : base;
+      const constraints = filters.map((filter) => where(filter.field, filter.op, filter.value));
+      if (ownerField && ownerUid) {
+        constraints.unshift(where(ownerField, "==", ownerUid));
+      }
+      const target = constraints.length > 0 ? query(base, ...constraints) : base;
       unsubscribe = onSnapshot(target, (snapshot) => {
         setRecords(
           snapshot.docs.map((document) => ({
@@ -54,7 +66,7 @@ export function useFirestoreRecords<T>({
       cancelled = true;
       unsubscribe();
     };
-  }, [collectionName, enabled, ownerField, ownerUid]);
+  }, [collectionName, enabled, filters, ownerField, ownerUid]);
 
   return { records, loading };
 }
