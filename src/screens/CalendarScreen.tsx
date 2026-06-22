@@ -4,8 +4,10 @@ import { StatusPill } from "../components/StatusPill";
 import { isValidTimeRange } from "../domain/dateTime";
 import {
   createScheduleRequest,
+  markScheduleGoogleEventCreated,
   reviewScheduleRequest,
 } from "../services/scheduleService";
+import { createGoogleCalendarEvent } from "../services/googleCalendarService";
 import { useFirestoreRecords } from "../services/useFirestoreRecords";
 import type { ScheduleRequest, Tier, WithId } from "../types";
 
@@ -52,6 +54,18 @@ export function CalendarScreen({
 
   async function handleReview(requestId: string, status: "approved" | "rejected") {
     await reviewScheduleRequest(requestId, userId, status);
+  }
+
+  async function handleAddToGoogleCalendar(request: WithId<ScheduleRequest>) {
+    const eventId = await createGoogleCalendarEvent({
+      requestId: request.id,
+      requesterId: request.createdBy,
+      date: request.date,
+      startTime: request.startTime,
+      endTime: request.endTime,
+      note: request.note,
+    });
+    await markScheduleGoogleEventCreated(request.id, eventId);
   }
 
   return (
@@ -112,10 +126,21 @@ export function CalendarScreen({
                 </button>
               </div>
             ) : null}
+            {tier === "teacher" && request.status === "approved" && !request.googleCalendarEventId ? (
+              <button
+                className="primary-button"
+                onClick={() => handleAddToGoogleCalendar(request)}
+                type="button"
+              >
+                Add to Google Calendar
+              </button>
+            ) : null}
+            {request.googleCalendarEventId ? (
+              <span className="status-pill status-pill--recognized">Google Calendar linked</span>
+            ) : null}
           </article>
         ))}
       </div>
     </section>
   );
 }
-

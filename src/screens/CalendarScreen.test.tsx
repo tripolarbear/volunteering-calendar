@@ -37,5 +37,31 @@ describe("CalendarScreen", () => {
     expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
   });
-});
 
+  it("shows Google Calendar action for approved teacher requests without event ids", () => {
+    render(
+      <CalendarScreen
+        tier="teacher"
+        userId="teacher-1"
+        requests={[
+          {
+            id: "schedule-1",
+            createdBy: "student-1",
+            date: "2026-06-23",
+            startTime: "09:00",
+            endTime: "10:00",
+            note: "Reading support",
+            status: "approved",
+            reviewedBy: "teacher-1",
+            reviewedAt: "now",
+            googleCalendarEventId: null,
+            createdAt: "now",
+            updatedAt: "now",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Add to Google Calendar" })).toBeInTheDocument();
+  });
+});
