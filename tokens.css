@@ -10,8 +10,12 @@
   --color-accent-strong: oklch(42% 0.11 184);
   --color-accent-soft: oklch(91% 0.052 184);
   --color-danger: oklch(57% 0.17 29);
+  --color-danger-soft: oklch(95% 0.04 29);
   --color-warning: oklch(70% 0.13 78);
+  --color-warning-strong: oklch(41% 0.09 78);
+  --color-warning-soft: oklch(92% 0.05 78);
   --color-success: oklch(58% 0.13 151);
+  --color-success-soft: oklch(94% 0.05 151);
   --color-focus: oklch(54% 0.118 184);
   --font-display: "Inter", "Segoe UI", system-ui, sans-serif;
   --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
@@ -39,4 +43,3 @@
   --dur-fast: 120ms;
   --dur-med: 180ms;
 }
-
