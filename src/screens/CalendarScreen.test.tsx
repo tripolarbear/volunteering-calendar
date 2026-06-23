@@ -21,6 +21,7 @@ describe("CalendarScreen", () => {
           scheduleRequest({
             id: "mine-approved",
             createdBy: "student-1",
+            title: "Library shelving",
             date: "2026-06-23",
             note: "Reading support",
             status: "approved",
@@ -40,7 +41,7 @@ describe("CalendarScreen", () => {
 
     expect(screen.getByRole("heading", { name: "Volunteer calendar" })).toBeInTheDocument();
     expect(screen.getByText("June 2026")).toBeInTheDocument();
-    expect(screen.getByText("Reading support")).toBeInTheDocument();
+    expect(screen.getByText("Library shelving")).toBeInTheDocument();
     expect(screen.queryByText("Pending support")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Request schedule" })).not.toBeInTheDocument();
   });
@@ -55,6 +56,7 @@ describe("CalendarScreen", () => {
             id: "schedule-1",
             createdBy: "student-1",
             date: "2026-06-23",
+            title: "Reading support",
             note: "Reading support",
             status: "approved",
           }),
@@ -62,6 +64,7 @@ describe("CalendarScreen", () => {
             id: "schedule-2",
             createdBy: "student-2",
             date: "2026-06-23",
+            title: "Math games",
             note: "Math games",
             status: "approved",
           }),
@@ -80,10 +83,10 @@ describe("CalendarScreen", () => {
         tier="teacher"
         userId="teacher-1"
         requests={[
-          scheduleRequest({ id: "schedule-1", note: "Reading support" }),
-          scheduleRequest({ id: "schedule-2", note: "Math games" }),
-          scheduleRequest({ id: "schedule-3", note: "Snack prep" }),
-          scheduleRequest({ id: "schedule-4", note: "Cleanup" }),
+          scheduleRequest({ id: "schedule-1", title: "Reading support", note: "Reading support" }),
+          scheduleRequest({ id: "schedule-2", title: "Math games", note: "Math games" }),
+          scheduleRequest({ id: "schedule-3", title: "Snack prep", note: "Snack prep" }),
+          scheduleRequest({ id: "schedule-4", title: "Cleanup", note: "Cleanup" }),
         ]}
       />,
     );
@@ -102,18 +105,20 @@ describe("CalendarScreen", () => {
       <CalendarScreen
         tier="student"
         userId="student-1"
-        requests={[scheduleRequest({ id: "schedule-detail", note: "Reading support" })]}
+        requests={[
+          scheduleRequest({ id: "schedule-detail", title: "Library shelving", note: "Reading support" }),
+        ]}
       />,
     );
 
     expect(screen.queryByRole("dialog", { name: "Schedule details" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Reading support 09:00-10:00" }));
+    await user.click(screen.getByRole("button", { name: "Library shelving 09:00-10:00" }));
 
     const dialog = screen.getByRole("dialog", { name: "Schedule details" });
     expect(within(dialog).queryByText("Selected schedule")).not.toBeInTheDocument();
     expect(within(dialog).getByText("Title")).toBeInTheDocument();
-    expect(within(dialog).getAllByText("Reading support")).toHaveLength(2);
+    expect(within(dialog).getByText("Library shelving")).toBeInTheDocument();
     expect(within(dialog).getByText("Date")).toBeInTheDocument();
     expect(within(dialog).getByText("2026-06-23")).toBeInTheDocument();
     expect(within(dialog).getByText("Start time")).toBeInTheDocument();
@@ -125,6 +130,7 @@ describe("CalendarScreen", () => {
     expect(within(dialog).getByText("Status")).toBeInTheDocument();
     expect(within(dialog).getByText("approved")).toBeInTheDocument();
     expect(within(dialog).getByText("Note")).toBeInTheDocument();
+    expect(within(dialog).getByText("Reading support")).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Close details" }));
 
@@ -166,6 +172,7 @@ function scheduleRequest(
   return {
     id: "schedule-1",
     createdBy: "student-1",
+    title: "Reading support",
     date: "2026-06-23",
     startTime: "09:00",
     endTime: "10:00",

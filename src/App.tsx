@@ -27,7 +27,7 @@ export default function App() {
 
   const screens: Record<ScreenKey, ReactNode> = {
     dashboard: (
-      <DashboardScreen onNavigate={setActiveScreen} tier={auth.profile.tier} />
+      <DashboardScreen onNavigate={setActiveScreen} tier={auth.profile.tier} userId={auth.profile.uid} />
     ),
     calendar: <CalendarScreen tier={auth.profile.tier} userId={auth.profile.uid} />,
     board: <BoardScreen tier={auth.profile.tier} userId={auth.profile.uid} />,

@@ -18,6 +18,7 @@ describe("scheduleService", () => {
     await expect(
       service.createScheduleRequest({
         createdBy: "student-1",
+        title: "Library shelving",
         date: "2026-06-23",
         startTime: "09:00",
         endTime: "10:00",
@@ -28,6 +29,7 @@ describe("scheduleService", () => {
 
     expect(deps.addDocument).toHaveBeenCalledWith("scheduleRequests", {
       createdBy: "student-1",
+      title: "Library shelving",
       date: "2026-06-23",
       startTime: "09:00",
       endTime: "10:00",

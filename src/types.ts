@@ -17,6 +17,7 @@ export type BoardPostType = "notice" | "activityReport";
 
 export interface CreateScheduleRequestInput {
   createdBy: string;
+  title: string;
   date: string;
   startTime: string;
   endTime: string;

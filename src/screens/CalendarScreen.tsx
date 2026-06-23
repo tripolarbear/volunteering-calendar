@@ -21,6 +21,10 @@ const MONTHS = [
   "December",
 ];
 
+function getScheduleTitle(request: ScheduleRequest) {
+  return request.title || request.note || "Volunteer shift";
+}
+
 export function CalendarScreen({
   requests,
   tier,
@@ -81,15 +85,15 @@ export function CalendarScreen({
           return (
             <div aria-label={dateKey || undefined} className="calendar-day" key={`${dateKey}-${index}`}>
               {day ? <strong>{day}</strong> : null}
-              {visibleDayRequests.map((request) => (
+          {visibleDayRequests.map((request) => (
                 <button
-                  aria-label={`${request.note || "Volunteer shift"} ${request.startTime}-${request.endTime}`}
+                  aria-label={`${getScheduleTitle(request)} ${request.startTime}-${request.endTime}`}
                   className="calendar-event"
                   key={request.id}
                   onClick={() => setSelectedRequest(request)}
                   type="button"
                 >
-                  <span>{request.note || "Volunteer shift"}</span>
+                  <span>{getScheduleTitle(request)}</span>
                   <small>
                     {request.startTime}-{request.endTime}
                   </small>
@@ -113,7 +117,7 @@ export function CalendarScreen({
           <dl>
             <div>
               <dt>Title</dt>
-              <dd>{selectedRequest.note || "Volunteer shift"}</dd>
+              <dd>{getScheduleTitle(selectedRequest)}</dd>
             </div>
             <div>
               <dt>Date</dt>

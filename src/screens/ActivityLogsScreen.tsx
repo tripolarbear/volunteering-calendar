@@ -23,6 +23,19 @@ function getCurrentDefaults() {
   };
 }
 
+function getScheduleSaveErrorMessage(error: unknown) {
+  if (
+    typeof error === "object"
+    && error !== null
+    && "code" in error
+    && error.code === "permission-denied"
+  ) {
+    return "Firestore rejected this schedule. Publish the updated firestore.rules so the title field is allowed.";
+  }
+
+  return "Could not save this schedule to the database. Check your connection and try again.";
+}
+
 export function ActivityLogsScreen({
   logs,
   tier,
@@ -39,6 +52,7 @@ export function ActivityLogsScreen({
   const [scheduleDate, setScheduleDate] = useState(() => getCurrentDefaults().date);
   const [scheduleStartTime, setScheduleStartTime] = useState(() => getCurrentDefaults().startTime);
   const [scheduleDurationMinutes, setScheduleDurationMinutes] = useState(DEFAULT_DURATION_MINUTES);
+  const [scheduleTitle, setScheduleTitle] = useState("");
   const [scheduleNote, setScheduleNote] = useState("");
   const [error, setError] = useState("");
   const [scheduleError, setScheduleError] = useState("");
@@ -60,43 +74,60 @@ export function ActivityLogsScreen({
       return;
     }
 
-    await createActivityLog({
-      createdBy: userId,
-      scheduleRequestId: null,
-      date,
-      startTime,
-      endTime,
-      durationMinutes,
-      note,
-    });
-    const defaults = getCurrentDefaults();
-    setDate(defaults.date);
-    setStartTime(defaults.startTime);
-    setDurationMinutes(defaults.durationMinutes);
-    setNote("");
+    try {
+      await createActivityLog({
+        createdBy: userId,
+        scheduleRequestId: null,
+        date,
+        startTime,
+        endTime,
+        durationMinutes,
+        note,
+      });
+      const defaults = getCurrentDefaults();
+      setDate(defaults.date);
+      setStartTime(defaults.startTime);
+      setDurationMinutes(defaults.durationMinutes);
+      setNote("");
+    } catch (error) {
+      console.error("Activity log create failed", error);
+      setError("Could not save this activity log to the database. Check your connection and try again.");
+    }
   }
 
   async function handleCreateSchedule(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setScheduleError("");
+    const trimmedScheduleTitle = scheduleTitle.trim();
+    if (!trimmedScheduleTitle) {
+      setScheduleError("Enter a volunteer title.");
+      return;
+    }
     if (!scheduleDate || !isValidTimeRange(scheduleStartTime, scheduleEndTime)) {
       setScheduleError("Choose a valid date and time range.");
       return;
     }
 
-    await createScheduleRequest({
-      createdBy: userId,
-      date: scheduleDate,
-      startTime: scheduleStartTime,
-      endTime: scheduleEndTime,
-      durationMinutes: scheduleDurationMinutes,
-      note: scheduleNote,
-    });
-    const defaults = getCurrentDefaults();
-    setScheduleDate(defaults.date);
-    setScheduleStartTime(defaults.startTime);
-    setScheduleDurationMinutes(defaults.durationMinutes);
-    setScheduleNote("");
+    try {
+      await createScheduleRequest({
+        createdBy: userId,
+        title: trimmedScheduleTitle,
+        date: scheduleDate,
+        startTime: scheduleStartTime,
+        endTime: scheduleEndTime,
+        durationMinutes: scheduleDurationMinutes,
+        note: scheduleNote,
+      });
+      const defaults = getCurrentDefaults();
+      setScheduleDate(defaults.date);
+      setScheduleStartTime(defaults.startTime);
+      setScheduleDurationMinutes(defaults.durationMinutes);
+      setScheduleTitle("");
+      setScheduleNote("");
+    } catch (error) {
+      console.error("Schedule request create failed", error);
+      setScheduleError(getScheduleSaveErrorMessage(error));
+    }
   }
 
   return (
@@ -109,6 +140,15 @@ export function ActivityLogsScreen({
       </div>
       <form aria-label="Schedule request" className="form-stack compact-form" onSubmit={handleCreateSchedule}>
         <h3>Schedule request</h3>
+        <label>
+          Volunteer title
+          <input
+            value={scheduleTitle}
+            onChange={(event) => setScheduleTitle(event.target.value)}
+            placeholder="Library shelving"
+            type="text"
+          />
+        </label>
         <label>
           Date
           <input value={scheduleDate} onChange={(event) => setScheduleDate(event.target.value)} type="date" />
